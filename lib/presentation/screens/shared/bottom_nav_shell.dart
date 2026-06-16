@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../application/providers/auth_provider.dart';
 import '../../../domain/entities/user.dart';
+import '../admin/user_management_screen.dart';
 import '../alerts/alerts_screen.dart';
 import '../analytics/analytics_screen.dart';
 import '../automation/automation_screen.dart';
@@ -73,6 +74,12 @@ final List<_NavItem> _allNavItems = [
     label: 'Automation',
     icon: Icons.auto_mode_outlined,
     builder: () => const AutomationScreen(),
+    roles: [UserRole.admin],
+  ),
+  _NavItem(
+    label: 'Users',
+    icon: Icons.manage_accounts_outlined,
+    builder: () => const UserManagementScreen(),
     roles: [UserRole.admin],
   ),
   _NavItem(

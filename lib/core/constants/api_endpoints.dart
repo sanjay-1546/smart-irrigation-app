@@ -9,6 +9,12 @@ class ApiEndpoints {
   static const String register = '$baseUrl/auth/register.php';
   static const String me = '$baseUrl/auth/me.php';
 
+  // Users (admin user management + profile)
+  static const String usersList = '$baseUrl/users/index.php';
+  static const String users = usersList;
+  static const String userProfile = '$baseUrl/users/profile.php';
+  static const String changePassword = '$baseUrl/users/change_password.php';
+
   // Farms
   static const String farms = '$baseUrl/farms/index.php';
 

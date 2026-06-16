@@ -19,6 +19,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _weatherKeyController;
   late TextEditingController _farmNameController;
   late TextEditingController _farmLocationController;
+  late TextEditingController _profileNameController;
+  late TextEditingController _profileEmailController;
+  late TextEditingController _currentPasswordController;
+  late TextEditingController _newPasswordController;
 
   @override
   void initState() {
@@ -26,6 +30,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _weatherKeyController = TextEditingController();
     _farmNameController = TextEditingController();
     _farmLocationController = TextEditingController();
+    _profileNameController = TextEditingController();
+    _profileEmailController = TextEditingController();
+    _currentPasswordController = TextEditingController();
+    _newPasswordController = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final settings = context.read<SettingsProvider>();
       await settings.load();
@@ -34,6 +42,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final farm = context.read<FarmLayoutProvider>().farm;
       _farmNameController.text = farm.name;
       _farmLocationController.text = farm.location;
+      final user = context.read<AuthProvider>().currentUser;
+      _profileNameController.text = user?.name ?? '';
+      _profileEmailController.text = user?.email ?? '';
       setState(() {});
     });
   }
@@ -43,7 +54,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _weatherKeyController.dispose();
     _farmNameController.dispose();
     _farmLocationController.dispose();
+    _profileNameController.dispose();
+    _profileEmailController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveProfile() async {
+    final auth = context.read<AuthProvider>();
+    final ok = await auth.updateProfile(
+      name: _profileNameController.text.trim(),
+      email: _profileEmailController.text.trim(),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? 'Profile updated.' : (auth.profileErrorMessage ?? 'Failed to update profile.')),
+      ),
+    );
+  }
+
+  Future<void> _changePassword() async {
+    if (_currentPasswordController.text.isEmpty || _newPasswordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter your current and new password.')),
+      );
+      return;
+    }
+    final auth = context.read<AuthProvider>();
+    final ok = await auth.changePassword(
+      currentPassword: _currentPasswordController.text,
+      newPassword: _newPasswordController.text,
+    );
+    if (!mounted) return;
+    if (ok) {
+      _currentPasswordController.clear();
+      _newPasswordController.clear();
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok ? 'Password changed.' : (auth.passwordErrorMessage ?? 'Failed to change password.'),
+        ),
+      ),
+    );
   }
 
   Future<void> _logout() async {
@@ -67,7 +122,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final settings = context.watch<SettingsProvider>();
     final themeProvider = context.watch<ThemeProvider>();
     final farmProvider = context.watch<FarmLayoutProvider>();
-    final user = context.watch<AuthProvider>().currentUser;
+    final authProvider = context.watch<AuthProvider>();
+    final user = authProvider.currentUser;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -77,16 +133,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SectionCard(
             title: 'Profile',
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Name: ${user?.name ?? '-'}'),
                 Text('Role: ${user?.role.label ?? '-'}'),
-                Text('Email: ${user?.email ?? '-'}'),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _profileNameController,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _profileEmailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: authProvider.isProfileSaving ? null : _saveProfile,
+                  child: authProvider.isProfileSaving
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save Profile'),
+                ),
                 const SizedBox(height: 12),
                 FilledButton.tonalIcon(
                   onPressed: _logout,
                   icon: const Icon(Icons.logout),
                   label: const Text('Logout'),
+                ),
+              ],
+            ),
+          ),
+          SectionCard(
+            title: 'Change Password',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: _currentPasswordController,
+                  decoration: const InputDecoration(labelText: 'Current Password'),
+                  obscureText: true,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _newPasswordController,
+                  decoration: const InputDecoration(labelText: 'New Password'),
+                  obscureText: true,
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: authProvider.isChangingPassword ? null : _changePassword,
+                  child: authProvider.isChangingPassword
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Change Password'),
                 ),
               ],
             ),

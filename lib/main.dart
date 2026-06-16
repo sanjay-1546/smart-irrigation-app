@@ -11,6 +11,7 @@ import 'application/providers/irrigation_control_provider.dart';
 import 'application/providers/schedule_provider.dart';
 import 'application/providers/settings_provider.dart';
 import 'application/providers/theme_provider.dart';
+import 'application/providers/user_management_provider.dart';
 import 'core/constants/app_strings.dart';
 import 'core/routing/app_router.dart';
 import 'core/services/api_client.dart';
@@ -25,6 +26,7 @@ import 'data/repositories/api_auth_repository.dart';
 import 'data/repositories/api_dashboard_repository.dart';
 import 'data/repositories/api_irrigation_repository.dart';
 import 'data/repositories/api_schedule_repository.dart';
+import 'data/repositories/api_user_repository.dart';
 import 'data/repositories/mock_automation_repository.dart';
 
 void main() {
@@ -58,6 +60,12 @@ class SmartFarmApp extends StatelessWidget {
             ),
             secureStorage: secureStorage,
             farmContext: farmContext,
+            userRepository: ApiUserRepository(apiClient: apiClient),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => UserManagementProvider(
+            repository: ApiUserRepository(apiClient: apiClient),
           ),
         ),
         ChangeNotifierProvider(create: (_) => ThemeProvider()..load()),
