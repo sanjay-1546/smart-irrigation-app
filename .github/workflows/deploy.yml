@@ -1,0 +1,101 @@
+name: Flutter Web Build
+
+on:
+  push:
+    branches-ignore:
+      - 'prod-app'      # deployment output branch
+      - '*-build'       # all *-build output branches
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set build vars
+        id: vars
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          BRANCH=${GITHUB_REF_NAME}
+          BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+
+          # Map branch name → server env id
+          case "$BRANCH" in
+            main|prod)  ENV_ID="prod" ;;
+            staging)    ENV_ID="staging" ;;
+            local)      ENV_ID="local" ;;
+            *)          ENV_ID="dev-${BRANCH}" ;;   # all other branches → dev-${branchname}
+          esac
+
+          # Deploy target: main/prod → prod-app, everything else → ${branch}-build
+          case "$BRANCH" in
+            main|prod)  DEPLOY_BRANCH="prod-app" ;;
+            *)          DEPLOY_BRANCH="${BRANCH}-build" ;;
+          esac
+
+          echo "sha_short=$SHA"               >> $GITHUB_OUTPUT
+          echo "env_id=$ENV_ID"               >> $GITHUB_OUTPUT
+          echo "deploy_branch=$DEPLOY_BRANCH" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH"               >> $GITHUB_OUTPUT
+          echo "build_time=$BUILD_TIME"        >> $GITHUB_OUTPUT
+          echo "version=$VERSION"              >> $GITHUB_OUTPUT
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
+          cache-path: '${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:'
+          architecture: x64
+
+      # ── Cache pub packages ────────────────────────────────────────────────
+      - name: Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: flutter build web
+        run: |
+          flutter config --enable-web
+          flutter build web \
+            --release \
+            --base-href /smart-irrigation-app/ \
+            --source-maps \
+            --dart-define="commit=${{ steps.vars.outputs.sha_short }}" \
+            --dart-define="ENV=${{ steps.vars.outputs.env_id }}" \
+            --dart-define="BRANCH=${{ steps.vars.outputs.branch }}" \
+            --dart-define="BUILD_TIME=${{ steps.vars.outputs.build_time }}" \
+            --dart-define="VERSION=${{ steps.vars.outputs.version }}"
+
+      - name: Write version.json
+        run: |
+          cat > build/web/version.json <<EOF
+          {
+            "buildTime": "${{ steps.vars.outputs.build_time }}",
+            "commit": "${{ steps.vars.outputs.sha_short }}",
+            "branch": "${{ steps.vars.outputs.branch }}",
+            "version": "${{ steps.vars.outputs.version }}"
+          }
+          EOF
+
+      # ── Deploy to ${deploy_branch} ────────────────────────────────────────
+      - name: Deploy to ${{ steps.vars.outputs.deploy_branch }}
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git --work-tree build/web add --all
+          git commit -m "deploy: ${{ steps.vars.outputs.branch }} @ ${{ steps.vars.outputs.sha_short }} → ${{ steps.vars.outputs.env_id }}"
+          git push origin HEAD:${{ steps.vars.outputs.deploy_branch }} --force

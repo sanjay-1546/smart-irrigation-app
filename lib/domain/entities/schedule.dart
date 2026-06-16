@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 enum WaterSource { borewell, openWell }
 
-enum RepeatMode { none, daily, weekly }
+enum ScheduleRepeat { none, daily, weekly }
 
 class Schedule {
   final String id;
@@ -10,7 +10,7 @@ class Schedule {
   final WaterSource source;
   final TimeOfDay startTime;
   final TimeOfDay endTime;
-  final RepeatMode repeat;
+  final ScheduleRepeat repeat;
   final DateTime date;
   final bool active;
 
@@ -30,7 +30,7 @@ class Schedule {
     WaterSource? source,
     TimeOfDay? startTime,
     TimeOfDay? endTime,
-    RepeatMode? repeat,
+    ScheduleRepeat? repeat,
     DateTime? date,
     bool? active,
   }) {
