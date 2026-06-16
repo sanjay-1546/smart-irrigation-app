@@ -50,7 +50,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   Text(
-                    'Welcome, ${user?.name ?? 'User'}',
+                    'Hello, ${user?.name ?? 'User'} 👋',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
