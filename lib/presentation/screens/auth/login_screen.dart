@@ -121,20 +121,20 @@ class _LoginScreenState extends State<LoginScreen> {
                           Navigator.of(context).pushNamed(AppRoutes.forgotPassword),
                       child: const Text('Forgot password?'),
                     ),
-                    const SizedBox(height: 24),
-                    Card(
-                      color: colorScheme.secondaryContainer.withValues(alpha: 0.4),
-                      child: const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Text(
-                          'Demo credentials:\n'
-                          'admin / admin123\n'
-                          'farmer / farmer123\n'
-                          'technician / tech123',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ),
+                    // const SizedBox(height: 24),
+                    // Card(
+                    //   color: colorScheme.secondaryContainer.withValues(alpha: 0.4),
+                    //   child: const Padding(
+                    //     padding: EdgeInsets.all(12),
+                    //     child: Text(
+                    //       'Demo credentials:\n'
+                    //       'admin / admin123\n'
+                    //       'farmer / farmer123\n'
+                    //       'technician / tech123',
+                    //       style: TextStyle(fontSize: 12),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
