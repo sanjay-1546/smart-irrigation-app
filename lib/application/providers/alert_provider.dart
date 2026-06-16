@@ -9,22 +9,37 @@ class AlertProvider extends ChangeNotifier {
 
   bool isLoading = false;
   List<AppAlert> alerts = [];
+  String? errorMessage;
 
   Future<void> load() async {
     isLoading = true;
     notifyListeners();
-    alerts = await repository.getAlerts();
+    try {
+      alerts = await repository.getAlerts();
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('ApiException: ', '');
+    }
     isLoading = false;
     notifyListeners();
   }
 
   Future<void> markAsRead(String id) async {
-    await repository.markAsRead(id);
+    errorMessage = null;
+    try {
+      await repository.markAsRead(id);
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('ApiException: ', '');
+    }
     await load();
   }
 
   Future<void> dismiss(String id) async {
-    await repository.dismiss(id);
+    errorMessage = null;
+    try {
+      await repository.dismiss(id);
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('ApiException: ', '');
+    }
     await load();
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/farm_context.dart';
 import '../../core/services/secure_storage_service.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -8,8 +9,9 @@ enum AuthStatus { unknown, authenticated, unauthenticated }
 class AuthProvider extends ChangeNotifier {
   final AuthRepository repository;
   final SecureStorageService secureStorage;
+  final FarmContext? farmContext;
 
-  AuthProvider({required this.repository, required this.secureStorage});
+  AuthProvider({required this.repository, required this.secureStorage, this.farmContext});
 
   AuthStatus status = AuthStatus.unknown;
   User? currentUser;
@@ -21,6 +23,7 @@ class AuthProvider extends ChangeNotifier {
     if (token == null) {
       status = AuthStatus.unauthenticated;
     } else {
+      await farmContext?.loadPersisted();
       status = AuthStatus.authenticated;
     }
     notifyListeners();
@@ -38,7 +41,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      errorMessage = e.toString().replaceFirst('Exception: ', '');
+      errorMessage = e.toString().replaceFirst('ApiException: ', '').replaceFirst('Exception: ', '');
       isLoading = false;
       status = AuthStatus.unauthenticated;
       notifyListeners();

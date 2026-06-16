@@ -134,14 +134,64 @@ class _BottomNavShellState extends State<BottomNavShell> {
       );
     }
 
+    const maxPrimary = 4;
+    final hasOverflow = items.length > maxPrimary;
+    final primaryCount = hasOverflow ? maxPrimary : items.length;
+    final primaryItems = items.take(primaryCount).toList();
+    final overflowItems = hasOverflow ? items.skip(primaryCount).toList() : <_NavItem>[];
+
+    final selectedIsOverflow = _index >= primaryCount;
+
     return Scaffold(
       body: body,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: items
-            .map((item) => NavigationDestination(icon: Icon(item.icon), label: item.label))
-            .toList(),
+        selectedIndex: selectedIsOverflow ? primaryCount : _index,
+        onDestinationSelected: (i) {
+          if (hasOverflow && i == primaryCount) {
+            _showMoreSheet(context, overflowItems, items);
+          } else {
+            setState(() => _index = i);
+          }
+        },
+        destinations: [
+          ...primaryItems.map(
+            (item) => NavigationDestination(icon: Icon(item.icon), label: item.label),
+          ),
+          if (hasOverflow)
+            NavigationDestination(
+              icon: Icon(selectedIsOverflow
+                  ? items[_index].icon
+                  : Icons.more_horiz_outlined),
+              label: selectedIsOverflow ? items[_index].label : 'More',
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showMoreSheet(
+    BuildContext context,
+    List<_NavItem> overflowItems,
+    List<_NavItem> allItems,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: overflowItems
+              .map((item) => ListTile(
+                    leading: Icon(item.icon),
+                    title: Text(item.label),
+                    selected: allItems.indexOf(item) == _index,
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      setState(() => _index = allItems.indexOf(item));
+                    },
+                  ))
+              .toList(),
+        ),
       ),
     );
   }

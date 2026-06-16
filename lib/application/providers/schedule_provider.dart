@@ -17,6 +17,7 @@ class ScheduleProvider extends ChangeNotifier {
 
   bool isLoading = false;
   List<Schedule> schedules = [];
+  String? errorMessage;
 
   Future<void> load() async {
     isLoading = true;
@@ -30,11 +31,15 @@ class ScheduleProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    schedules = await repository.getSchedules();
-    await cacheService.cacheJsonList(
-      cacheService.schedulesKey,
-      schedules.map(_toJson).toList(),
-    );
+    try {
+      schedules = await repository.getSchedules();
+      await cacheService.cacheJsonList(
+        cacheService.schedulesKey,
+        schedules.map(_toJson).toList(),
+      );
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('ApiException: ', '');
+    }
     isLoading = false;
     notifyListeners();
   }
@@ -64,17 +69,32 @@ class ScheduleProvider extends ChangeNotifier {
       );
 
   Future<void> createSchedule(Schedule schedule) async {
-    await repository.createSchedule(schedule);
+    errorMessage = null;
+    try {
+      await repository.createSchedule(schedule);
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('ApiException: ', '');
+    }
     await load();
   }
 
   Future<void> updateSchedule(Schedule schedule) async {
-    await repository.updateSchedule(schedule);
+    errorMessage = null;
+    try {
+      await repository.updateSchedule(schedule);
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('ApiException: ', '');
+    }
     await load();
   }
 
   Future<void> deleteSchedule(String id) async {
-    await repository.deleteSchedule(id);
+    errorMessage = null;
+    try {
+      await repository.deleteSchedule(id);
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('ApiException: ', '');
+    }
     await load();
   }
 }

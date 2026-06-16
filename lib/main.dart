@@ -13,17 +13,19 @@ import 'application/providers/settings_provider.dart';
 import 'application/providers/theme_provider.dart';
 import 'core/constants/app_strings.dart';
 import 'core/routing/app_router.dart';
+import 'core/services/api_client.dart';
 import 'core/services/connectivity_service.dart';
+import 'core/services/farm_context.dart';
 import 'core/services/local_cache_service.dart';
 import 'core/services/secure_storage_service.dart';
 import 'core/theme/app_theme.dart';
-import 'data/repositories/mock_alert_repository.dart';
-import 'data/repositories/mock_analytics_repository.dart';
-import 'data/repositories/mock_auth_repository.dart';
+import 'data/repositories/api_alert_repository.dart';
+import 'data/repositories/api_analytics_repository.dart';
+import 'data/repositories/api_auth_repository.dart';
+import 'data/repositories/api_dashboard_repository.dart';
+import 'data/repositories/api_irrigation_repository.dart';
+import 'data/repositories/api_schedule_repository.dart';
 import 'data/repositories/mock_automation_repository.dart';
-import 'data/repositories/mock_dashboard_repository.dart';
-import 'data/repositories/mock_irrigation_repository.dart';
-import 'data/repositories/mock_schedule_repository.dart';
 
 void main() {
   runApp(const SmartFarmApp());
@@ -37,41 +39,56 @@ class SmartFarmApp extends StatelessWidget {
     final secureStorage = SecureStorageService();
     final cacheService = LocalCacheService();
     final connectivityService = ConnectivityService();
+    final farmContext = FarmContext();
+    final apiClient = ApiClient(secureStorage: secureStorage);
 
     return MultiProvider(
       providers: [
         Provider<SecureStorageService>.value(value: secureStorage),
         Provider<LocalCacheService>.value(value: cacheService),
         Provider<ConnectivityService>.value(value: connectivityService),
+        Provider<FarmContext>.value(value: farmContext),
+        Provider<ApiClient>.value(value: apiClient),
         ChangeNotifierProvider(
           create: (_) => AuthProvider(
-            repository: MockAuthRepository(secureStorage: secureStorage),
+            repository: ApiAuthRepository(
+              apiClient: apiClient,
+              secureStorage: secureStorage,
+              farmContext: farmContext,
+            ),
             secureStorage: secureStorage,
+            farmContext: farmContext,
           ),
         ),
         ChangeNotifierProvider(create: (_) => ThemeProvider()..load()),
         ChangeNotifierProvider(
           create: (_) => DashboardProvider(
-            repository: MockDashboardRepository(),
+            repository: ApiDashboardRepository(apiClient: apiClient, farmContext: farmContext),
             connectivityService: connectivityService,
             cacheService: cacheService,
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) => IrrigationControlProvider(repository: MockIrrigationRepository()),
+          create: (_) => IrrigationControlProvider(
+            repository: ApiIrrigationRepository(apiClient: apiClient, farmContext: farmContext),
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => ScheduleProvider(
-            repository: MockScheduleRepository(),
+            repository: ApiScheduleRepository(apiClient: apiClient, farmContext: farmContext),
             connectivityService: connectivityService,
             cacheService: cacheService,
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) => AlertProvider(repository: MockAlertRepository()),
+          create: (_) => AlertProvider(
+            repository: ApiAlertRepository(apiClient: apiClient, farmContext: farmContext),
+          ),
         ),
         ChangeNotifierProvider(
-          create: (_) => AnalyticsProvider(repository: MockAnalyticsRepository()),
+          create: (_) => AnalyticsProvider(
+            repository: ApiAnalyticsRepository(apiClient: apiClient, farmContext: farmContext),
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => AutomationProvider(repository: MockAutomationRepository()),

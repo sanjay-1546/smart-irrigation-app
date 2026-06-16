@@ -13,12 +13,17 @@ class IrrigationControlProvider extends ChangeNotifier {
   bool isLoading = false;
   List<ZoneStatus> zones = [];
   List<PumpStatus> pumps = [];
+  String? errorMessage;
 
   Future<void> load() async {
     isLoading = true;
     notifyListeners();
-    zones = await repository.getZones();
-    pumps = await repository.getPumps();
+    try {
+      zones = await repository.getZones();
+      pumps = await repository.getPumps();
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('ApiException: ', '');
+    }
     isLoading = false;
     notifyListeners();
   }
@@ -29,17 +34,32 @@ class IrrigationControlProvider extends ChangeNotifier {
   }
 
   Future<void> setPumpState(PumpType type, DeviceState state) async {
-    await repository.setPumpState(type, state);
+    errorMessage = null;
+    try {
+      await repository.setPumpState(type, state);
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('ApiException: ', '');
+    }
     await load();
   }
 
   Future<void> setZoneState(int zoneNumber, DeviceState state) async {
-    await repository.setZoneState(zoneNumber, state);
+    errorMessage = null;
+    try {
+      await repository.setZoneState(zoneNumber, state);
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('ApiException: ', '');
+    }
     await load();
   }
 
   Future<void> emergencyStopAll() async {
-    await repository.emergencyStopAll();
+    errorMessage = null;
+    try {
+      await repository.emergencyStopAll();
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('ApiException: ', '');
+    }
     await load();
   }
 

@@ -35,6 +35,7 @@ class _IrrigationControlScreenState extends State<IrrigationControlScreen> {
         pump.type,
         turningOn ? DeviceState.running : DeviceState.stopped,
       );
+      _showErrorIfAny(provider);
     }
   }
 
@@ -54,6 +55,16 @@ class _IrrigationControlScreenState extends State<IrrigationControlScreen> {
         zone.zoneNumber,
         turningOn ? DeviceState.running : DeviceState.stopped,
       );
+      _showErrorIfAny(provider);
+    }
+  }
+
+  void _showErrorIfAny(IrrigationControlProvider provider) {
+    if (provider.errorMessage != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(provider.errorMessage!)),
+      );
+      provider.errorMessage = null;
     }
   }
 
@@ -69,9 +80,16 @@ class _IrrigationControlScreenState extends State<IrrigationControlScreen> {
     if (confirmed) {
       await provider.emergencyStopAll();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All pumps and zones have been stopped.')),
-        );
+        if (provider.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(provider.errorMessage!)),
+          );
+          provider.errorMessage = null;
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('All pumps and zones have been stopped.')),
+          );
+        }
       }
     }
   }
